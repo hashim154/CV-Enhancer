@@ -74,8 +74,12 @@ def enhance_resume(resume_text):
 
 
 def get_gpt_suggestions(resume_text):
-    # Using hard-coded API key as requested
-    genai.configure(api_key="AIzaSyDmYWvRc1XeCuaNNsehWdWj4xAN3RoQTEc")
+    # Read API key from env (set in Vercel)
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return "Gemini API key is not configured on the server."
+
+    genai.configure(api_key=api_key)
 
     prompt = f"""
     Analyze the following text to identify if it is resume or CV content. 
@@ -90,10 +94,15 @@ def get_gpt_suggestions(resume_text):
     Suggestions:
     """
 
-    model = genai.GenerativeModel("gemini-2.5-flash")
-    response = model.generate_content(prompt)
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        # Optional: log for debugging
+        app.logger.exception("Gemini API error: %s", e)
+        return "There was an error contacting the AI service. Please try again later."
 
-    return response.text
 
 
 # DO NOT RUN app.run() ON VERCEL
